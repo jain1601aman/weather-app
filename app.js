@@ -1,28 +1,34 @@
-
+//var htp = require('http');
 var f = require('fs');
 var express = require('express');
 var app = express();
+
+app.set('views','./views')
+app.set('view engine','ejs')
+app.use(express.urlencoded({extended:true}));
+
 app.get('/', function(req,res){
-    res.send('<html><head><h1>please enter city name after / in url.<br></h1><h1>in case of name with multiple word, concatenate it i.e for new delhi,write New+Delhi.<br></h1></head></html>')
+    res.render('index');
 });
-app.get('/:city', function(req,res){
+app.post('/weather', function(req,res){
     var a = "http://api.openweathermap.org/data/2.5/weather?q=";
     var b = "&appid=be38ae2e8f86831cbaf3426f353b8faf&units=metric";
-    var url = a + req.params.city + b;
+    city = req.body.city.trim()
+    city = city.replace(/\s/g, '+')
+    var url = a + city + b;
+    
     var reqs = require('request');
     reqs(url , function(error,resp,body){
         if(resp.statusCode === 200){
             var data = JSON.parse(body); 
-            res.writeHead(200 , {'Content-Type' : 'text/html'});
-            var str = f.readFileSync(__dirname + '/we.htm' , 'utf8');
-            str = str.replace('{cname}',data['name']);
-            str = str.replace('{ctemp}',data.main.temp);
-            str = str.replace('{chmd}',data.main['humidity']);
-            str = str.replace('{cpress}',data.main['pressure']);
-            str = str.replace('{cwnd}',data.wind['speed']);
-            str = str.replace('{cwnddir}',data.wind['deg']);
-            res.end(str);
+            res.render('weather' ,{
+                city:data['name'],
+                temp:data.main.temp,
+                hmd: data.main.humidity,
+                press:data.main.pressure,
+                wind : data.wind.speed
+            })
         }
     });   
 });
-app.listen(7777);
+app.listen(process.env.PORT || 7777);
